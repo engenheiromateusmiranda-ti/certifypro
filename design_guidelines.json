@@ -1,0 +1,110 @@
+{
+  "theme": "LIGHT",
+  "archetype": "4 (Swiss & High-Contrast)",
+  "emotional_tone": "Professional, reliable, authoritative, clear, and efficient.",
+  "typography": {
+    "headings": {
+      "family": "Cabinet Grotesk",
+      "weights": ["bold", "black", "light"],
+      "usage": "Use tight letter spacing (tracking-tight) for all headings. Never center by default. Use fluid scales for the hero heading, max text-6xl. Import from Fontshare: @import url('https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,500,700,400,300,900&display=swap');"
+    },
+    "body": {
+      "family": "Satoshi",
+      "weights": ["regular", "medium", "semibold"],
+      "usage": "Loose line-height (leading-relaxed) for readability. Used for all paragraphs, forms, and data tables. Import from Fontshare: @import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,300,400&display=swap');"
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "weights": ["regular", "medium"],
+      "usage": "Used for certificate ID, verification codes, API keys, and numeric data in the dashboard."
+    }
+  },
+  "colors": {
+    "background": {
+      "primary": "#FFFFFF",
+      "secondary": "#F3F4F6",
+      "surface": "#FAFAFA"
+    },
+    "text": {
+      "primary": "#111827",
+      "secondary": "#4B5563",
+      "muted": "#9CA3AF"
+    },
+    "brand": {
+      "primary": "#0A58CA",
+      "primary_hover": "#084298",
+      "accent": "#002FA7",
+      "dark_accent": "#0A0A0A"
+    },
+    "feedback": {
+      "success": "#198754",
+      "warning": "#FFC107",
+      "error": "#DC3545",
+      "info": "#0DCAF0"
+    },
+    "borders": {
+      "default": "#E5E7EB",
+      "focus": "#0A58CA"
+    }
+  },
+  "layout_spacing": {
+    "container_padding": "p-6 md:p-12 lg:p-24",
+    "grid_gap": "gap-6 md:gap-8",
+    "dashboard_grid": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4",
+    "card_padding": "p-6",
+    "border_radius": "rounded-none md:rounded-sm",
+    "shadows": {
+      "subtle": "shadow-sm",
+      "hover": "shadow-md",
+      "floating": "shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+    }
+  },
+  "surface_strategies": {
+    "dashboard_cards": "Flat solid background (#FFFFFF), sharp 1px border (#E5E7EB), no shadow by default. On hover: slight lift (-translate-y-1) and subtle shadow.",
+    "sticky_header": "Crystal Glassmorphism: bg-white/70, backdrop-blur-xl, border-b border-gray-200. Must have z-50.",
+    "template_editor_sidebar": "Solid background (#FAFAFA) with border-r border-gray-200. Contextual right sidebar adapts to selected elements.",
+    "modals_dialogs": "Solid background, high-contrast overlay (bg-black/50 backdrop-blur-sm)."
+  },
+  "component_instructions": {
+    "buttons": "Square edges (rounded-none or max rounded-sm). Primary button: bg-[#0A58CA] text-white hover:bg-[#084298]. Secondary: bg-white text-[#111827] border border-[#111827] hover:bg-gray-50.",
+    "inputs": "Shadcn UI Input, Select, Checkbox. Customize with sharp corners (rounded-none), focus:ring-2 focus:ring-[#0A58CA].",
+    "tables": "Shadcn Table for data. Left-aligned, generous row height, hover state on rows (hover:bg-gray-50).",
+    "tabs": "Shadcn Tabs, sharp underline style, text-[#4B5563] active:text-[#0A58CA] active:border-b-2 active:border-[#0A58CA].",
+    "charts": "Recharts. Monochromatic blue palette with one contrasting accent (e.g., #0A58CA and #FFC107).",
+    "editor_canvas": "Central canvas area with a white A4 proportion box (shadow-md). Contextual toolbar floats above or to the right of the selected element. Left sidebar for tools/layers."
+  },
+  "icons": {
+    "library": "lucide-react",
+    "usage": "Use for navigation, editor tools, and dashboard metrics. Stroke width 1.5 for a clean, professional look."
+  },
+  "animations": {
+    "micro": "Hover states on all interactive elements: transition-all duration-200 ease-in-out.",
+    "page_transitions": "Fade in and slight slide up (using framer-motion if necessary, otherwise simple CSS).",
+    "toast": "Slide in from bottom-right (Sonner)."
+  },
+  "accessibility": {
+    "contrast": "Ensure all text meets 4.5:1 ratio.",
+    "focus": "Visible focus rings on all interactive elements.",
+    "test_ids": "Add data-testid to ALL interactive elements (e.g., 'login-submit-button', 'canvas-text-element')."
+  },
+  "media": {
+    "marketing": {
+      "hero_bg": "Use abstract CSS grid patterns or large typography. No heavy images to avoid clutter.",
+      "university_context": "https://images.unsplash.com/photo-1738949538905-ea7960661840?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwyfHx1bml2ZXJzaXR5JTIwZ3JhZHVhdGlvbiUyMGNlcmVtb255fGVufDB8fHx8MTc3NDUzMTU5Nnww&ixlib=rb-4.1.0&q=85",
+      "corporate_context": "https://images.unsplash.com/photo-1531058020387-3be344556be6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwzfHxjb3Jwb3JhdGUlMjBidXNpbmVzcyUyMGV2ZW50fGVufDB8fHx8MTc3NDUzMTU5Nnww&ixlib=rb-4.1.0&q=85"
+    },
+    "placeholders": {
+      "sponsor_logo": "https://images.pexels.com/photos/7661185/pexels-photo-7661185.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Import Cabinet Grotesk and Satoshi via Fontshare in the CSS file.",
+    "Update tailwind.config.js to include the custom color palette and font families.",
+    "Use pure HTML/Tailwind for marketing landing pages to ensure asymmetrical and unique layouts. Avoid generic centered layouts.",
+    "Use Shadcn UI for the dashboard, template editor interface, and forms. Heavily customize border radii (max rounded-sm) and colors to match the Swiss High-Contrast archetype.",
+    "The Template Builder MUST have a left sidebar for assets/layers, a central canvas area with a white A4 proportion box (shadow-md) representing the certificate, and a contextual top or right floating toolbar for the selected element's properties.",
+    "In the dashboard, use the 'Control Room' grid layout: grid-cols-1 md:grid-cols-3 lg:grid-cols-4 with tight gaps (gap-4 or gap-6). Use h-full on widgets to avoid jagged bottoms.",
+    "Do not use generic 'Inter' for headings.",
+    "Add 'data-testid' to all buttons, links, inputs, and interactive components. This is CRITICAL for automated testing."
+  ]
+}
