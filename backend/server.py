@@ -266,14 +266,28 @@ async def register(user: UserRegister):
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Create organization
+    org_id = str(uuid.uuid4())
+    org_name = user.organization_name or f"{user.name}'s Organization"
+    org_doc = {
+        "id": org_id,
+        "name": org_name,
+        "plan": "FREE",
+        "subscription_status": "ACTIVE",
+        "api_key": None,
+        "certificates_this_month": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.organizations.insert_one(org_doc)
+    
     user_id = str(uuid.uuid4())
     user_doc = {
         "id": user_id,
         "name": user.name,
         "email": user.email,
         "password_hash": hash_password(user.password),
-        "plan": "FREE",
-        "role": "user",
+        "organization_id": org_id,
+        "role": "admin",
         "email_verified": False,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -286,8 +300,8 @@ async def register(user: UserRegister):
         id=user_id,
         name=user.name,
         email=user.email,
-        plan="FREE",
-        role="user",
+        organization_id=org_id,
+        role="admin",
         token=token
     )
 
@@ -303,8 +317,8 @@ async def login(user: UserLogin):
         id=user_doc['id'],
         name=user_doc['name'],
         email=user_doc['email'],
-        plan=user_doc.get('plan', 'FREE'),
-        role=user_doc.get('role', 'user'),
+        organization_id=user_doc.get('organization_id', ''),
+        role=user_doc.get('role', 'admin'),
         token=token
     )
 
@@ -314,10 +328,174 @@ async def get_me(current_user = Depends(get_current_user)):
         id=current_user['id'],
         name=current_user['name'],
         email=current_user['email'],
-        plan=current_user.get('plan', 'FREE'),
-        role=current_user.get('role', 'user'),
+        organization_id=current_user.get('organization_id', ''),
+        role=current_user.get('role', 'admin'),
         token=""
     )
+
+# ============= GOOGLE OAUTH ROUTES =============
+@api_router.post("/auth/google")
+async def google_auth(request: Request):
+    """
+    Exchange session_id for user data from Emergent Auth
+    """
+    try:
+        body = await request.json()
+        session_id = body.get('session_id')
+        
+        if not session_id:
+            raise HTTPException(status_code=400, detail="session_id required")
+        
+        # Call Emergent Auth to get user data
+        headers = {"X-Session-ID": session_id}
+        response = requests.get(
+            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+            headers=headers,
+            timeout=10
+        )
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid session")
+        
+        user_data = response.json()
+        
+        # Check if user exists
+        existing_user = await db.users.find_one({"email": user_data['email']}, {"_id": 0})
+        
+        if existing_user:
+            # User exists, update session
+            user_id = existing_user['id']
+            organization_id = existing_user.get('organization_id', '')
+        else:
+            # Create new organization
+            org_id = str(uuid.uuid4())
+            org_name = f"{user_data['name']}'s Organization"
+            org_doc = {
+                "id": org_id,
+                "name": org_name,
+                "plan": "FREE",
+                "subscription_status": "ACTIVE",
+                "api_key": None,
+                "certificates_this_month": 0,
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.organizations.insert_one(org_doc)
+            
+            # Create new user
+            user_id = str(uuid.uuid4())
+            user_doc = {
+                "id": user_id,
+                "name": user_data['name'],
+                "email": user_data['email'],
+                "organization_id": org_id,
+                "role": "admin",
+                "email_verified": True,
+                "picture": user_data.get('picture', ''),
+                "auth_provider": "google",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(user_doc)
+            organization_id = org_id
+        
+        # Store session
+        session_token = user_data['session_token']
+        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        
+        session_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": user_id,
+            "session_token": session_token,
+            "expires_at": expires_at.isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.user_sessions.insert_one(session_doc)
+        
+        # Create response with cookie
+        response = Response(content='{"status": "success"}', media_type="application/json")
+        response.set_cookie(
+            key="session_token",
+            value=session_token,
+            httponly=True,
+            secure=True,
+            samesite="none",
+            max_age=7 * 24 * 60 * 60,
+            path="/"
+        )
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Google auth failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/auth/me/cookie")
+async def get_me_cookie(request: Request):
+    """
+    Get current user from session cookie (for Google OAuth)
+    """
+    try:
+        session_token = request.cookies.get("session_token")
+        
+        if not session_token:
+            raise HTTPException(status_code=401, detail="No session token")
+        
+        # Find session
+        session = await db.user_sessions.find_one({"session_token": session_token}, {"_id": 0})
+        
+        if not session:
+            raise HTTPException(status_code=401, detail="Invalid session")
+        
+        # Check expiry
+        expires_at = session['expires_at']
+        if isinstance(expires_at, str):
+            expires_at = datetime.fromisoformat(expires_at)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+        if expires_at < datetime.now(timezone.utc):
+            await db.user_sessions.delete_one({"session_token": session_token})
+            raise HTTPException(status_code=401, detail="Session expired")
+        
+        # Get user
+        user = await db.users.find_one({"id": session['user_id']}, {"_id": 0})
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return UserResponse(
+            id=user['id'],
+            name=user['name'],
+            email=user['email'],
+            organization_id=user.get('organization_id', ''),
+            role=user.get('role', 'admin'),
+            token=""
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Auth cookie check failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/auth/logout")
+async def logout(request: Request):
+    """
+    Logout user and clear session
+    """
+    try:
+        session_token = request.cookies.get("session_token")
+        
+        if session_token:
+            await db.user_sessions.delete_one({"session_token": session_token})
+        
+        response = Response(content='{"status": "logged out"}', media_type="application/json")
+        response.delete_cookie(key="session_token", path="/")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Logout failed: {str(e)}")
+        return {"status": "error", "detail": str(e)}
 
 # ============= FILE UPLOAD ROUTES =============
 @api_router.post("/upload")
